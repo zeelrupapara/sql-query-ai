@@ -1,0 +1,66 @@
+import sqlite3
+import streamlit as st
+import os
+from utils import get_db_path
+import mysql.connector
+from mysql.connector import Error  # Ensure to import Error here
+
+def handle_database_upload(uploaded_file):
+    try:
+        db_path = get_db_path(uploaded_file.name)
+        with open(db_path, "wb") as f:
+            f.write(uploaded_file.getbuffer())
+        return db_path
+    except Exception as e:
+        st.error(f"Error saving database file: {e}")
+        return None
+
+def get_database_schema(db_path):
+    try:
+        conn = sqlite3.connect(db_path)
+        cursor = conn.cursor()
+        cursor.execute("SELECT name FROM sqlite_master WHERE type='table';")
+        tables = cursor.fetchall()
+        schema = ""
+        for table in tables:
+            table_name = table[0]
+            schema += f"Table: {table_name}\n"
+            cursor.execute(f"PRAGMA table_info({table_name});")
+            columns = cursor.fetchall()
+            for column in columns:
+                schema += f"  - {column[1]} ({column[2]})\n"
+        conn.close()
+        return schema
+    except Exception as e:
+        st.error(f"Error extracting database schema: {e}")
+        return None
+
+def create_mysql_connection(host_name, user_name, user_password, db_name):
+    """Create a connection to the MySQL database."""
+    connection = None
+    try:
+        connection = mysql.connector.connect(
+            host=host_name,
+            user=user_name,
+            password=user_password,
+            database=db_name
+        )
+        print("MySQL Database connection successful")
+    except Error as e:
+        print(f"The error '{e}' occurred")
+    return connection
+
+def get_mysql_schema(connection):
+    """Get the schema (tables) from the MySQL database."""
+    cursor = connection.cursor()
+    cursor.execute("SHOW TABLES;")
+    tables = cursor.fetchall()
+    schema = ""
+    for table in tables:
+        table_name = table[0]
+        schema += f"Table: {table_name}\n"
+        cursor.execute(f"DESCRIBE {table_name};")
+        columns = cursor.fetchall()
+        for column in columns:
+            schema += f"  - {column[0]} ({column[1]})\n"
+    return schema

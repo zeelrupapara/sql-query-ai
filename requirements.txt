@@ -1,0 +1,9 @@
+streamlit
+openai==0.28
+altair
+bcrypt
+python-dotenv
+pip
+watchdog
+google-generativeai
+python-dotenv
