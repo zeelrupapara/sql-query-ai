@@ -17,32 +17,6 @@ load_env()
 
 st.set_page_config(page_title="NL2SQL Chatbot", page_icon="🤖")
 
-def initialize_session_state():
-    """Initialize session state variables"""
-    if 'user_chat_histories' not in st.session_state:
-        st.session_state['user_chat_histories'] = {}
-    
-    # Initialize current user's chat history
-    current_user = st.session_state.get('current_user')
-    if current_user and current_user not in st.session_state['user_chat_histories']:
-        st.session_state['user_chat_histories'][current_user] = []
-
-def get_current_chat_history():
-    """Get chat history for current user"""
-    current_user = st.session_state.get('current_user')
-    return st.session_state['user_chat_histories'].get(current_user, [])
-
-def display_chat_history():
-    """Display chat history with static visualizations."""
-    chat_history = get_current_chat_history()
-    for message in chat_history:
-        with st.chat_message(message["role"]):
-            st.markdown(message["content"])
-            if message.get("visualization"):
-                viz_chart = create_static_visualization(message["visualization"])
-                if viz_chart:
-                    st.altair_chart(viz_chart, use_container_width=True)
-
 def add_message_to_history(role, content, visualization=None):
     """Add message to chat history with visualization data and settings."""
     current_user = st.session_state.get('current_user')
@@ -387,49 +361,10 @@ def handle_sql_upload(uploaded_file):
 def main():
     init_chat_history_table()
 
-    # Start the WebSocket server in a separate thread
-    websocket_thread = threading.Thread(target=start_websocket_server)
-    websocket_thread.daemon = True  # Thread exits when the main program exits
-    websocket_thread.start()
-
     # Streamlit UI
     st.title("NL2SQL Chatbot")
 
-    if not is_user_logged_in():
-        auth_tab, register_tab = st.tabs(["Login", "Register"])
-        
-        with auth_tab:
-            with st.form("login_form"):
-                username = st.text_input("Username")
-                password = st.text_input("Password", type="password")
-                submit_button = st.form_submit_button("Login")
-                
-                if submit_button:
-                    if authenticate_user(username, password):
-                        st.session_state['current_user'] = username
-                        initialize_session_state()
-                        st.success("Logged in successfully!")
-                        st.rerun()
-                    else:
-                        st.error("Invalid username or password.")
-        
-        with register_tab:
-            with st.form("register_form"):
-                new_username = st.text_input("New Username")
-                new_password = st.text_input("New Password", type="password")
-                register_button = st.form_submit_button("Register")
-                
-                if register_button:
-                    if register_user(new_username, new_password):
-                        st.success("Registered successfully! Please log in.")
-                    else:
-                        st.error("Username already exists.")
-        return
 
-    if st.button("Logout"):
-        st.session_state['current_user'] = None
-        logout_user()
-        st.rerun()
 
     st.sidebar.header("Database Management")
     database_option = st.sidebar.selectbox("Select Database Type", ["Sqlite/CSV/Excel", "MySQL"], key="database_type")
@@ -476,7 +411,6 @@ def main():
             st.info("Please upload a SQLite database to start.")
             return
 
-        display_chat_history()
     
     # Proceed with query processing
     user_query = st.chat_input("Ask me anything about your database", key="user_query")
