@@ -3,3 +3,5 @@
 *.sql
 *.db
 **/**.pyc
+
+venv/*

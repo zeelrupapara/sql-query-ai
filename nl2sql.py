@@ -40,7 +40,7 @@ def execute_sqlite(sql_query, db_path):
         conn = sqlite3.connect(db_path)
         cursor = conn.cursor()
         cursor.execute(sql_query)
-        results = cursor.fetchall()``
+        results = cursor.fetchall()
         columns = [description[0] for description in cursor.description]
         conn.close()
         return results, columns

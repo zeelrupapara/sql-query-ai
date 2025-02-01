@@ -7,3 +7,4 @@ pip
 watchdog
 google-generativeai
 python-dotenv
+mysql-connector-python
