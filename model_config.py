@@ -7,7 +7,7 @@ import google.generativeai as genai
 load_dotenv()
 
 class LLMInterface:
-    def __init__(self, model_type="openai"):
+    def __init__(self, model_type="google"):
         self.model_type = model_type
         if model_type == "openai":
             openai.api_key = os.getenv("OPENAI_API_KEY")
