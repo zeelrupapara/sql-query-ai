@@ -219,19 +219,21 @@ def generate_sql(user_query, schema):
     6. For units sold analysis, use SUM(Units_Sold)
 
     Example valid responses:
-    - SELECT Product, SUM(Units_Sold) as total_units FROM cannabis GROUP BY Product ORDER BY total_units DESC LIMIT 10
+    - SELECT Product, SUM(Units Sold) as total_units FROM cannabis GROUP BY Product ORDER BY total_units DESC LIMIT 10
     - SELECT Product, COUNT(*) as count FROM cannabis GROUP BY Product ORDER BY count DESC LIMIT 5
 
     Output ONLY the SQL query with no additional text or formatting.
     
     # Contraints in Output Response:
     - Query Should be start with the SELECT and end with `;`
+    - Make sure that you analize the schema and then name the correct columns name if schema have _ then add if space that please use space in column name.
+    - If columm name have a space then add single quote in column name in query.
     """
 
     try:
         sql_query = llm.generate_completion(prompt, temperature=0.4)
         print(f"SQL Query: {sql_query}")
-        
+        print(f"SQL Schema: {schema}")
         # Extract the SQL query between 'SELECT' and ';'
         start_index = sql_query.upper().find('SELECT')
         end_index = sql_query.rfind(';') + 1
