@@ -168,7 +168,7 @@ def classify_query(user_query, schema):
     query_lower = user_query.lower()
     for topic, response in business_questions.items():
         if topic in query_lower:
-            return False, response
+            return True, response
     
     # If not a business domain question, check if it can be answered with the database
     try:
