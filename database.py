@@ -1,5 +1,4 @@
 import sqlite3
-import streamlit as st
 import os
 from utils import get_db_path
 import mysql.connector
@@ -12,7 +11,7 @@ def handle_database_upload(uploaded_file):
             f.write(uploaded_file.getbuffer())
         return db_path
     except Exception as e:
-        st.error(f"Error saving database file: {e}")
+        print(f"Error saving database file: {e}")
         return None
 
 def get_database_schema(db_path):
@@ -32,7 +31,7 @@ def get_database_schema(db_path):
         conn.close()
         return schema
     except Exception as e:
-        st.error(f"Error extracting database schema: {e}")
+        print(f"Error extracting database schema: {e}")
         return None
 
 def create_mysql_connection(host_name, user_name, user_password, db_name):

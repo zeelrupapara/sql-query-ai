@@ -40,7 +40,7 @@ OPENAI_API_KEY=your_api_key_here
 
 1. Start the application:
 ```bash
-streamlit run streamlit_app.py
+python app.py
 ```
 
 2. Open your browser and navigate to the displayed URL (typically http://localhost:8501)

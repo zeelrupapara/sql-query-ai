@@ -1,7 +1,6 @@
 import os
 from dotenv import load_dotenv
 import sqlite3
-import streamlit as st
 import pandas as pd
 from utils import get_db_path, load_env
 from visualization import generate_visualization
@@ -29,7 +28,7 @@ def execute_sql(sql_query, connection):
         columns = [description[0] for description in cursor.description]
         return results, columns
     except Exception as e:
-        st.error(f"Error executing SQL query: {e}")
+        print(f"Error executing SQL query: {e}")
         return None, None
 
 def execute_sqlite(sql_query, db_path):
@@ -45,7 +44,7 @@ def execute_sqlite(sql_query, db_path):
         conn.close()
         return results, columns
     except Exception as e:
-        st.error(f"Error executing SQL query: {e}")
+        print(f"Error executing SQL query: {e}")
         return None, None
 
 def refine_query(user_query, schema):
@@ -115,7 +114,7 @@ def refine_query(user_query, schema):
         print(f"Refined Query: {refined_query}")
         return refined_query
     except Exception as e:
-        st.error(f"Error refining user query: {e}")
+        print(f"Error refining user query: {e}")
         # Fallback to the original user query if refinement fails
         return user_query
 
@@ -224,38 +223,28 @@ def generate_sql(user_query, schema):
     - SELECT Product, COUNT(*) as count FROM cannabis GROUP BY Product ORDER BY count DESC LIMIT 5
 
     Output ONLY the SQL query with no additional text or formatting.
+    
+    # Contraints in Output Response:
+    - Query Should be start with the SELECT and end with `;`
     """
 
     try:
-        sql_query = llm.generate_completion(prompt, temperature=0.1)
+        sql_query = llm.generate_completion(prompt, temperature=0.4)
+        print(f"SQL Query: {sql_query}")
         
-        # Validation checks
-        if not sql_query.upper().startswith('SELECT'):
-            # Fallback query for product performance
-            if "best performing" in user_query.lower() or "highest" in user_query.lower():
-                return """
-                SELECT Product, SUM(Units_Sold) as total_units_sold 
-                FROM cannabis 
-                GROUP BY Product 
-                ORDER BY total_units_sold DESC 
-                LIMIT 10
-                """
-            raise ValueError("Generated query does not start with SELECT")
-            
-        print(f"Generated SQL Query: {sql_query}")
+        # Extract the SQL query between 'SELECT' and ';'
+        start_index = sql_query.upper().find('SELECT')
+        end_index = sql_query.rfind(';') + 1
+        if start_index == -1 or end_index == 0:
+            raise ValueError("Generated query does not contain a valid SQL statement")
+        
+        sql_query = sql_query[start_index:end_index].strip()
+        
+        print(f"Extracted SQL Query: {sql_query}")
         return sql_query
         
     except Exception as e:
         print(f"Error in generate_sql: {str(e)}")
-        # Fallback query for common scenarios
-        if "unit" in user_query.lower() and "sold" in user_query.lower():
-            return """
-            SELECT Product, SUM(Units_Sold) as total_units_sold 
-            FROM cannabis 
-            GROUP BY Product 
-            ORDER BY total_units_sold DESC 
-            LIMIT 10
-            """
         raise Exception(f"Error generating SQL: {str(e)}")
 
 def generate_follow_up_questions(user_query, schema, results=None):

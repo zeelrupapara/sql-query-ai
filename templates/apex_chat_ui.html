@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Apex Chat UI</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body { font-family: 'DM Sans', sans-serif; background-color: #f8fafc; }
+        .loader {
+            display: none;
+            font-size: 1.5rem;
+            color: #1D4ED8;
+            font-weight: bold;
+            position: absolute;
+            left: 50%;
+            top: 50%;
+            transform: translate(-50%, -50%);
+            animation: pulse 1.5s infinite;
+        }
+        @keyframes pulse {
+            0%, 100% { opacity: 0.6; }
+            50% { opacity: 1; }
+        }
+        .chat-bubble {
+            max-width: 80%;
+            padding: 12px;
+            border-radius: 12px;
+            margin: 8px 0;
+            animation: fadeIn 0.3s ease-in-out;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .user-bubble { background: #4F46E5; color: white; align-self: flex-end; }
+        .bot-bubble { background: #E5E7EB; color: black; align-self: flex-start; }
+        .chart-container { width: 100%; max-width: 800px; margin: 20px auto; }
+    </style>
+</head>
+<body class="bg-gray-100 flex">
+    <!-- Sidebar -->
+    <div class="w-1/4 bg-white shadow-lg p-4 h-screen flex flex-col">
+        <h2 class="text-xl font-bold mb-4 flex items-center">📁 Upload File</h2>
+        <input type="file" id="fileInput" class="block w-full border p-2 rounded mb-4">
+        <button onclick="uploadFile()" class="w-full bg-blue-600 hover:bg-blue-700 text-white p-2 rounded">⬆ Upload</button>
+        
+        <h2 class="text-xl font-bold mt-6">📊 Columns</h2>
+        <ul id="columnsList" class="mt-2 text-gray-700"></ul>
+    </div>
+
+    <!-- Main Chat Area -->
+    <div class="w-3/4 flex flex-col h-screen p-4 relative">
+        <h1 class="text-2xl font-bold mb-4">💬 Apex Chat</h1>
+        
+        <div id="chatHistory" class="flex-1 bg-white shadow-lg p-4 rounded overflow-y-auto flex flex-col items-start relative">
+            <p class="text-gray-500">Ask a question to start...</p>
+            <div id="loader" class="loader">🤖 Thinking...</div>
+        </div>
+
+        <div class="mt-4 flex">
+            <input type="text" id="chatInput" class="flex-1 border p-2 rounded" placeholder="Ask a question...">
+            <button id="sendButton" onclick="sendMessage()" class="ml-2 bg-green-500 hover:bg-green-600 text-white p-2 rounded transition-opacity">➡ Send</button>
+        </div>
+    </div>
+
+    <script>
+        function uploadFile() {
+            let fileInput = document.getElementById('fileInput');
+            let formData = new FormData();
+            formData.append("file", fileInput.files[0]);
+
+            fetch("/upload", { method: "POST", body: formData })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.status === "success") {
+                        let schema = data.schema.split('\n');
+                        let columnsList = document.getElementById('columnsList');
+                        columnsList.innerHTML = '';
+                        schema.forEach(col => {
+                            if (col.includes("-")) {
+                                let li = document.createElement('li');
+                                li.textContent = col.trim();
+                                columnsList.appendChild(li);
+                            }
+                        });
+                    }
+                });
+        }
+
+        function sendMessage() {
+            let chatInput = document.getElementById('chatInput');
+            let chatHistory = document.getElementById('chatHistory');
+            let loader = document.getElementById('loader');
+            let sendButton = document.getElementById('sendButton');
+            
+            let query = chatInput.value.trim();
+            if (!query) return;
+            
+            chatInput.value = "";
+            sendButton.disabled = true;
+            sendButton.classList.add("opacity-50", "cursor-not-allowed");
+            loader.style.display = "block";
+            chatHistory.innerHTML = `<div class='chat-bubble user-bubble'>${query}</div>`;
+            
+            fetch("/chat", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ query: query })
+            })
+            .then(response => response.json())
+            .then(data => {
+                loader.style.display = "none";
+                sendButton.disabled = false;
+                sendButton.classList.remove("opacity-50", "cursor-not-allowed");
+                if (data.status === "success") {
+                    chatHistory.innerHTML += `<div class='chat-bubble bot-bubble'><strong>Summary:</strong> ${data.summary}</div>`;
+                    renderGraph(data.visualization);
+                }
+            });
+        }
+
+        function renderGraph(visualization) {
+            if (!visualization || !visualization.data) return;
+            
+            let chatHistory = document.getElementById('chatHistory');
+            let canvasContainer = document.createElement('div');
+            canvasContainer.classList.add("chart-container");
+            
+            let canvas = document.createElement('canvas');
+            canvasContainer.appendChild(canvas);
+            chatHistory.appendChild(canvasContainer);
+            
+            let labels = visualization.data.map(d => d[visualization.default_settings.x_col]);
+            let values = visualization.data.map(d => d[visualization.default_settings.y_col]);
+            
+            new Chart(canvas, {
+                type: visualization.default_settings.chart_type,
+                data: {
+                    labels: labels,
+                    datasets: [{ label: "Data", data: values, backgroundColor: "#4F46E5" }]
+                }
+            });
+        }
+    </script>
+</body>
+</html>

@@ -1,6 +1,5 @@
 import openai
 import os
-import streamlit as st
 from utils import load_env
 
 load_env()

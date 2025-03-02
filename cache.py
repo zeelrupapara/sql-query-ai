@@ -1,7 +1,6 @@
 import hashlib
-import streamlit as st
 import json
-from database_cache import store_in_db_cache, get_from_db_cache, init_cache_db
+from database_cache import store_in_db_cache, get_from_db_cache, init_cache_db, store_key_value, get_key_value
 
 
 # Initialize cache database
@@ -10,6 +9,15 @@ def get_cache_key(query, schema):
     """Generate a unique cache key based on the query and schema."""
     combined = f"{query}|{schema}"
     return hashlib.md5(combined.encode()).hexdigest()
+
+# cache key and value
+def cache_key_value(key, value):
+    store_key_value(key, value)
+
+def get_from_db_cache(key):
+    return get_key_value(key)
+
+
 def cache_response(query, schema, sql_query, summary, visualization, follow_up, results, columns):
     """Cache the query response in database only."""
     try:

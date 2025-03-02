@@ -27,6 +27,34 @@ def init_cache_db():
     conn.commit()
     conn.close()
 
+
+def store_key_value(cache_key, query):
+    """Store key-value pair in the cache database."""
+    conn = sqlite3.connect('query_cache.db')
+    cursor = conn.cursor()
+    
+    try:
+        cursor.execute('''
+        INSERT OR REPLACE INTO query_cache 
+        (cache_key, query)
+        VALUES (?, ?)
+        ''', (cache_key, query))
+        conn.commit()
+    finally:
+        conn.close()
+
+def get_key_value(cache_key):
+    """Retrieve value for a given key from the cache database."""
+    conn = sqlite3.connect('query_cache.db')
+    cursor = conn.cursor()
+    
+    try:
+        cursor.execute('SELECT query FROM query_cache WHERE cache_key = ?', (cache_key,))
+        result = cursor.fetchone()
+        return result[0] if result else None
+    finally:
+        conn.close()
+
 def store_in_db_cache(cache_key, query_data):
     """Store query results in database cache."""
     conn = sqlite3.connect('query_cache.db')
