@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Apex Chat UI</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/apexcharts"></script>
     <style>
         body { font-family: 'DM Sans', sans-serif; background-color: #f8fafc; }
         .loader {
@@ -102,7 +102,7 @@
             sendButton.disabled = true;
             sendButton.classList.add("opacity-50", "cursor-not-allowed");
             loader.style.display = "block";
-            chatHistory.innerHTML = `<div class='chat-bubble user-bubble'>${query}</div>`;
+            chatHistory.innerHTML += `<div class='chat-bubble user-bubble'>${query}</div>`;
             
             fetch("/chat", {
                 method: "POST",
@@ -125,23 +125,24 @@
             if (!visualization || !visualization.data) return;
             
             let chatHistory = document.getElementById('chatHistory');
-            let canvasContainer = document.createElement('div');
-            canvasContainer.classList.add("chart-container");
+            let chartContainer = document.createElement('div');
+            chartContainer.classList.add("chart-container");
             
-            let canvas = document.createElement('canvas');
-            canvasContainer.appendChild(canvas);
-            chatHistory.appendChild(canvasContainer);
+            let chartDiv = document.createElement('div');
+            chartDiv.id = "chart";
+            chartContainer.appendChild(chartDiv);
+            chatHistory.appendChild(chartContainer);
             
             let labels = visualization.data.map(d => d[visualization.default_settings.x_col]);
             let values = visualization.data.map(d => d[visualization.default_settings.y_col]);
             
-            new Chart(canvas, {
-                type: visualization.default_settings.chart_type,
-                data: {
-                    labels: labels,
-                    datasets: [{ label: "Data", data: values, backgroundColor: "#4F46E5" }]
-                }
-            });
+            let options = {
+                chart: { type: visualization.default_settings.chart_type, height: 350 },
+                series: [{ name: "Data", data: values }],
+                xaxis: { categories: labels }
+            };
+            
+            new ApexCharts(chartDiv, options).render();
         }
     </script>
 </body>
